@@ -2,37 +2,96 @@ package taller
 
 class Ejercicio() {
 
-  // Punto 1. La suma de las áreas de todas las figuras de la lista.
-  // Tal como está devuelve 0.0 y las pruebas quedan en rojo.
-  def areaTotal(figuras: List[Figura]): Double = {
-    0.0 // Completar
+  // Punto 1
+  def areaTotal(figuras: List[Figura]): Double = figuras match {
+    case Nil => 0.0
+    case fig :: resto => fig.area + areaTotal(resto)
   }
 
-  // Punto 2. Los elementos de l sin repetidos y en orden ascendente.
-  // La lista puede llegar desordenada.
+  // Funciones auxiliares sin métodos prohibidos
+  private def pertenece(x: Int, l: List[Int]): Boolean = l match {
+    case Nil => false
+    case head :: tail => if (head == x) true else pertenece(x, tail)
+  }
+
+  private def insertarOrdenado(x: Int, l: List[Int]): List[Int] = l match {
+    case Nil => List(x)
+    case head :: tail =>
+      if (x < head) x :: l
+      else if (x == head) l
+      else head :: insertarOrdenado(x, tail)
+  }
+
+  // Punto 2
   def sinRepetidos(l: List[Int]): List[Int] = {
-    List() // Completar
+    def ordenar(lista: List[Int], acc: List[Int]): List[Int] = lista match {
+      case Nil => acc
+      case x :: xs => ordenar(xs, insertarOrdenado(x, acc))
+    }
+    ordenar(l, Nil)
   }
 
-  // Punto 3. Los elementos que están en las dos listas, sin repetidos
-  // y en orden ascendente.
+  // Punto 3
   def comunes(l1: List[Int], l2: List[Int]): List[Int] = {
-    List() // Completar
+    def filtrarEInsertar(lista: List[Int], acc: List[Int]): List[Int] = lista match {
+      case Nil => acc
+      case x :: xs =>
+        if (pertenece(x, l2)) filtrarEInsertar(xs, insertarOrdenado(x, acc))
+        else filtrarEInsertar(xs, acc)
+    }
+    filtrarEInsertar(l1, Nil)
   }
 
-  // Punto 4. El valor entero de la expresión.
-  def evaluar(e: Expr): Int = {
-    0 // Completar
+  // Punto 4
+  def evaluar(e: Expr): Int = e match {
+    case Numero(v) => v
+    case Suma(e1, e2) => evaluar(e1) + evaluar(e2)
+    case Resta(e1, e2) => evaluar(e1) - evaluar(e2)
+    case Prod(e1, e2) => evaluar(e1) * evaluar(e2)
   }
 
-  // La expresión en una línea, con paréntesis solo donde hacen falta.
-  def mostrar(e: Expr): String = {
-    "" // Completar
+  def mostrar(e: Expr): String = e match {
+    case Numero(v) => v.toString
+    case Suma(e1, e2) => s"${mostrar(e1)} + ${mostrar(e2)}"
+    case Resta(e1, e2) =>
+      val izq = mostrar(e1)
+      val der = e2 match {
+        case Suma(_, _) | Resta(_, _) => s"(${mostrar(e2)})"
+        case _ => mostrar(e2)
+      }
+      s"$izq - $der"
+    case Prod(e1, e2) =>
+      val izq = e1 match {
+        case Suma(_, _) | Resta(_, _) => s"(${mostrar(e1)})"
+        case _ => mostrar(e1)
+      }
+      val der = e2 match {
+        case Suma(_, _) | Resta(_, _) => s"(${mostrar(e2)})"
+        case _ => mostrar(e2)
+      }
+      s"$izq * $der"
   }
 
-  // La expresión sin sumas de cero, productos por uno, productos por cero
-  // ni restas de una expresión consigo misma. No hace aritmética.
-  def simplificar(e: Expr): Expr = {
-    Numero(0) // Completar
+  def simplificar(e: Expr): Expr = e match {
+    case Numero(v) => Numero(v)
+    case Suma(e1, e2) =>
+      (simplificar(e1), simplificar(e2)) match {
+        case (Numero(0), s2) => s2
+        case (s1, Numero(0)) => s1
+        case (s1, s2) => Suma(s1, s2)
+      }
+    case Resta(e1, e2) =>
+      (simplificar(e1), simplificar(e2)) match {
+        case (s1, Numero(0)) => s1
+        case (s1, s2) if s1 == s2 => Numero(0)
+        case (s1, s2) => Resta(s1, s2)
+      }
+    case Prod(e1, e2) =>
+      (simplificar(e1), simplificar(e2)) match {
+        case (Numero(0), _) | (_, Numero(0)) => Numero(0)
+        case (Numero(1), s2) => s2
+        case (s1, Numero(1)) => s1
+        case (s1, s2) => Prod(s1, s2)
+      }
   }
 }
